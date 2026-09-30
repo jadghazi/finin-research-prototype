@@ -1,0 +1,23 @@
+{
+  "dataset": "raeidsaqur/NIFTY",
+  "revision": "9b8aef736cbaf6a7e9645ac20e8bd9b2344734d2",
+  "downloaded_at_utc": "2026-09-30T09:41:55+00:00",
+  "dataset_card": "https://huggingface.co/datasets/raeidsaqur/NIFTY",
+  "files": {
+    "train.jsonl": {
+      "url": "https://huggingface.co/datasets/raeidsaqur/NIFTY/resolve/9b8aef736cbaf6a7e9645ac20e8bd9b2344734d2/train.jsonl",
+      "bytes": 40020260,
+      "sha256": "12519e816f42512ba57ffebf37c73c84921c94dd6a4f4487a23275e83b7b33ee"
+    },
+    "valid.jsonl": {
+      "url": "https://huggingface.co/datasets/raeidsaqur/NIFTY/resolve/9b8aef736cbaf6a7e9645ac20e8bd9b2344734d2/valid.jsonl",
+      "bytes": 2524810,
+      "sha256": "a3a75449cf45c5d86043907119e69f9bc4459994a111d7726bc3df7fd6e90c14"
+    },
+    "test.jsonl": {
+      "url": "https://huggingface.co/datasets/raeidsaqur/NIFTY/resolve/9b8aef736cbaf6a7e9645ac20e8bd9b2344734d2/test.jsonl",
+      "bytes": 1473866,
+      "sha256": "4de737c7db7352eae7812a7c34c63059e3f911cb7e2bb54c48260ce39aeaab6f"
+    }
+  }
+}
