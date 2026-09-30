@@ -1,0 +1,9 @@
+{
+  "source_url": "https://query1.finance.yahoo.com/v8/finance/chart/SPY?period1=1262304000&period2=1600992000&interval=1d",
+  "retrieved_at_utc": "2026-09-30T11:12:50+00:00",
+  "sha256": "1c590d620ec1fa6d2aac97d8f66db53adfc83185183dd8e6eb2cc31cdd68bc35",
+  "sessions": 2701,
+  "first_session": "2010-01-04",
+  "last_session": "2020-09-24",
+  "raw_file": "data/raw/spy/daily.json"
+}

@@ -1,33 +1,73 @@
-# Pipeline map
+# Pipeline and code map
 
-This diagram maps the paper's key idea to the smaller public-data prototype. Solid boxes are planned processing steps; only dataset download and audit are implemented so far.
+Architecture checked against FININ Figure 2 and Eqs. 1-7. The complete pipeline has run on the workstation. See the [held-out results](../reports/results.md) for its measured outcome.
+
+## Data flow
+
+```mermaid
+flowchart TD
+    N["NIFTY headlines dated n"] --> S["Deduplicate and select at most 16"]
+    S --> R["Frozen BGE-small: cache text vectors"]
+    S --> B["Frozen financial TinyBERT: cache 3 probabilities"]
+    R --> E["Shared learned text projection"]
+    B --> EN["News sentiment MLP"]
+    E --> FN["News fusion MLP"]
+    EN --> FN
+    FN --> SA["News self-attention"]
+    D["Fixed market description"] --> R
+    P["SPY prices through forecast day d"] --> EP["Market numerical MLP"]
+    E --> FM["Market fusion MLP"]
+    EP --> FM
+    FM --> Q["Market query"]
+    SA --> K["News keys and refined vectors"]
+    Q --> A["Masked softmax attention over headlines"]
+    K --> A
+    A --> W["Weighted sum of refined news vectors"]
+    K --> W
+    FM --> H["Prediction MLP"]
+    W --> H
+    H --> O["Probability of a higher next-session close"]
+    T["Future SPY close: target only"] --> L["Training loss or evaluation"]
+    O --> L
+```
+
+Market and headline text share projection parameters. Market/news fusion MLPs remain separate. Future closing prices enter only the target. Frozen encoders run once during feature preparation, outside training.
+
+## Time alignment
 
 ```mermaid
 flowchart LR
-    N["Dated NIFTY headlines"] --> A["Audit and select headlines"]
-    P["SPY daily prices"] --> J["Join by trading date and make target"]
-    A --> J
-    J --> E["Frozen text encoder; cache vectors"]
-    E --> F["Fuse headline text and sentiment"]
-    J --> M["Encode market price features"]
-    F --> S["Same-day news self-attention"]
-    S --> C["Market-query attention over news"]
-    M --> C
-    C --> T["Small next-day direction predictor"]
-    M --> T
-    T --> R["Held-out results versus baselines"]
+    N["News date n: dated headlines"] --> D["Next session d: closing market features"]
+    D --> P["Predict after close d"]
+    P --> Q["Next session q: observe close and score"]
 ```
 
-## Why each step exists
+Example: January 6 headlines, January 7 market features, predict January 8 close versus January 7 close. The delay addresses missing individual release times, subject to correct date buckets. Version 1 uses one input day.
 
-1. **Audit and select:** NIFTY supplies many headlines per date. We need a fixed selection rule and must know how many dates/headlines we actually have.
-2. **Join and target:** for date `d`, inputs must be available before the prediction decision; target is whether SPY's next trading-day close exceeds its close on `d`. NIFTY's provided labels use three classes and describe the move into date `d`, while FININ's target is the move after `d`. We will derive and audit our own label from SPY prices.
-3. **Frozen text encoder:** compute headline vectors once on the stronger machine, then store them. This keeps repeated training runs small.
-4. **Fusion and attention:** preserve FININ's distinctive mechanism: individual headline representations, news-to-news interaction, then market-based weighting of headlines.
-5. **Evaluation:** compare with always-up, prices-only, sentiment aggregation, and mean-pooled news on identical held-out dates. Inspect headline weights as model diagnostics, not causal evidence.
+## Code layout
 
-## Boundaries and unknowns
+The table maps each code file to a concrete job. The benchmark, integrity tests and fixed comparison all completed.
 
-- The paper uses Reuters/TRNA sentiment scores; a public proxy will need a separately documented sentiment method.
-- NIFTY has daily headline groupings rather than reliable individual release timestamps. Any claim about an executable trading strategy needs a stricter timing audit.
-- Model configuration and training code have not been selected or written yet.
+| Path | Responsibility / paper mapping |
+| --- | --- |
+| `scripts/01_download_nifty.py` | Existing: fetch pinned source files |
+| `scripts/02_audit_nifty.py` | Existing: inspect raw schema, dates, counts and duplicates |
+| `scripts/03_prepare_data.py` | Snapshot prices; create examples, targets and manifests |
+| `scripts/04_cache_features.py` | Run frozen BGE/financial TinyBERT once; save arrays and provenance |
+| `scripts/05_run_experiments.py` | Fixed baseline/ablation runs; checkpoints and logs |
+| `scripts/06_export_results.py` | Held-out predictions, metrics, figures and offline report |
+| `src/data/nifty.py` | Source-specific headline parser |
+| `src/data/prices.py` | Price source, trading calendar and target alignment |
+| `src/data/examples.py` | Common schema, boundary purge, headline selection and masks |
+| `src/features/cache.py` | Frozen BGE text features and finance TinyBERT probabilities; save model revisions and output ordering |
+| `src/models/encoders.py` | Text projection and numerical/fusion MLPs, Eqs. 1-5 |
+| `src/models/attention.py` | News interaction and market-query weighting, section 4.2 / Eq. 6 |
+| `src/models/finin.py` | Connect fusion, attention, aggregation and prediction, Eq. 7 |
+| `src/models/baselines.py` | Baselines and controlled ablations |
+| `src/training.py` | Training loop, early stopping, seeds and checkpoints |
+| `src/evaluation.py` | Classification metrics and per-date predictions |
+| `tests/` | Date/target integrity, masking invariance and tiny-batch learning checks |
+
+Each example records news date, forecast date, target date, selected headline IDs, split and target. Caches record model revisions. Runs record code/data fingerprint, environment, seeds, timing and held-out predictions. The presentation explains transformations using worked examples and the paper-to-prototype comparison.
+
+See [the full plan](../REPRODUCTION_PLAN.md) and [verification report](../reports/plan_verification.md).

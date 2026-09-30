@@ -6,3 +6,4 @@ paper/*.pdf
 data/raw/
 data/processed/
 artifacts/
+tmp/

@@ -1,31 +1,47 @@
-# Dataset selection: provisional decision
+# Dataset decision
 
-**Decision:** first check whether the professor or university can access the paper's Reuters/TRNA historical News Analytics data. If so, use a smaller slice of that **same source**: one index, a shorter date range, and a fixed maximum number of headlines per day. This is the closest feasible reproduction. If that access is unavailable, keep NIFTY as a provisional source for a **FININ mechanism demonstration**, subject to its price/target checks below. NIFTY cannot support a faithful numerical replication of the Reuters/TRNA study.
+Decision on 2026-09-30: **NIFTY headlines + verified Yahoo SPY prices + generated financial TinyBERT sentiment for version 1.** Use previous-trading-day news at the forecast day's close. This supplies the principal FININ inputs and supports controlled classification experiments within the available hardware.
 
-## Comparison as of 2026-09-30
+This replaces the earlier advice to wait for TRNA or restrict NIFTY to a code demonstration. A reduced implementation can produce meaningful results on documented substitute data. Its results answer the prototype question and are not directly comparable to original-paper scores.
 
-| Candidate | Why it helps | Main limitation for this project | Decision |
-| --- | --- | --- | --- |
-| Paper's Reuters/TRNA data, if available through university/LSEG access | Same headline source and provided news analytics sentiment scores as the paper; a 2-3 year, one-index subset would be manageable. | Access is licensed and no copy is present in this workspace; a reduced sample still cannot be compared numerically with the full study. | **Preferred if licensed access is confirmed.** |
-| [NIFTY](https://huggingface.co/datasets/raeidsaqur/NIFTY) | Dated financial headlines tied to SPY, an S&P 500 proxy; 2,111 dated examples; ~44 MB downloaded. The authors describe finance-topic filtering. | No individual headline release times or Reuters sentiment. Its supplied three-class label is the price move **into** the row date, so it is not FININ's next-day binary target. Our audit found median headlines/day fall from 78 in train to 26 in test, plus 18,932 duplicate headline strings within training days. `context` has only a header, although historical price rows appear in `conversations`. | **Provisional first choice** for architecture testing, subject to the checks below. |
-| [Daily News for Stock Market Prediction / DJIA copy](https://github.com/Currie32/Predicting-the-Dow-Jones-with-Headlines) | Small and easy to inspect; the reviewed copy has 73,608 headline rows across 2,943 dates and 1,989 DJIA price rows, with usually 25 headlines/day. | Headlines are Reddit WorldNews top stories, not necessarily financial; no per-headline release times or provided sentiment. The target market changes from an S&P 500 proxy to DJIA. Popularity-based selection may depend on when votes were counted. | Simpler **fallback for an engineering demo**, weaker match to FININ's financial news question. |
-| [FNSPID](https://huggingface.co/datasets/Zihan1004/FNSPID) | Large item-level stock news/price collection and sentiment fields; potentially useful for later ticker-level work. | Focuses on individual stocks rather than an index. The hosted files include ~5.7 GB and ~23.2 GB news CSVs and a ~590 MB price ZIP; a tiny subset cannot be selected by downloading one small source file. Some previewed sentiment values are null. | **Not the first prototype dataset** on this hardware/time budget. |
-| [S&P 500 with Financial News Headlines (2008-2024)](https://www.kaggle.com/datasets/dyutidasmahaptra/s-and-p-500-with-financial-news-headlines-20082024) | Exact index and an easily sized file; its card describes more than 19,000 headline rows with closing prices. | Far fewer headlines per day than NIFTY, and the reviewed card does not establish per-headline timestamps or the source/selection process needed for a careful prediction study. | Possible backup only after an independent audit. |
+## Corrections from direct checks
 
-Sources for NIFTY construction and labels: [NIFTY dataset paper](https://www.cs.toronto.edu/~raeidsaqur/writings/nifty-dataset_raeid.saqur2024.pdf), sections 2.1-2.3. Source for FNSPID scale: [FNSPID dataset card](https://huggingface.co/datasets/Zihan1004/FNSPID). Local NIFTY counts and quality checks: [`reports/data_audit.md`](../reports/data_audit.md). The DJIA counts above come from inspecting the CSVs linked by its repository; the Kaggle size/description comes from its public dataset metadata.
+- **Target timing:** all 2,111 source returns match next-trading-day SPY returns within rounding precision. Earlier advice asserting movement into the row date was wrong. The source label is still three-class, while FININ requires binary labels.
+- **Prices:** prompts contain 2,695 distinct price rows, independently matched to Yahoo OHLCV. Standalone `context` fields contain only a header. Use a separate full price snapshot to avoid parsing prompts in the production pipeline.
+- **Audit count:** arbitrary headline lines inflated the earlier reported maximum of 109 price-history rows. Actual maxima are 8 in every split.
+- **Sentiment:** NIFTY lacks Reuters sentiment; probabilities from a compact finance-trained TinyBERT are an explicit first-version substitute. Its incremental value was tested with a no-sentiment ablation and was not established on this held-out period. This replaced the larger planned FinBERT after download speed was measured.
+- **Timing:** no per-headline publication times are available. Previous-trading-day news reduces the risk, while correct source-date grouping remains an assumption.
 
-## Checks before accepting NIFTY
+See [verification evidence](../reports/plan_verification.md) and [the full recipe](../REPRODUCTION_PLAN.md).
 
-1. Parse its prompt market-history rows and confirm every included price date precedes the row's headline date. Compare sampled prices with an independent SPY source.
-2. Build `y_d = 1[close(d+1) > close(d)]` from verified prices, using the *next trading day* on the price calendar. Never use the supplied `label` or `pct_change` as that target.
-3. Count how many dated examples join to prices and how many are lost in each split. Keep the published chronological boundaries and exclude incomplete final targets.
-4. Inspect selected headlines across early and late years. Document the large coverage shift and choose a fixed cap/selection rule before looking at test performance.
-5. State the information cutoff precisely. Without item timestamps, the dataset cannot substantiate intraday availability or realistic close-to-close trading returns.
+## Required fields
 
-If the price/target audit fails or the news coverage shift makes results unusable, switch to a documented fallback and change the research claim accordingly. The repository's data-preparation code should isolate source-specific parsing so the model can still be reused.
+| Field | Source | Status |
+| --- | --- | --- |
+| News text/date | Pinned NIFTY `news` and `date` | 2,111 rows; no empty-news dates |
+| Market OHLCV/adjusted close | Frozen Yahoo SPY daily chart response | 2,701 sessions returned; all required fields present; snapshot checksum tracked |
+| Up/not-up target | Compare closes on forecast day and next session | Calculated and checked for all 2,107 retained examples |
+| Per-headline sentiment | Frozen `mikeysharma/finance-sentiment-analysis` ONNX model | Positive/negative/neutral control inputs passed; all selected headlines cached |
+| Market text | Fixed generic SPY/S&P 500 description | Cached as a static input; historical constituents omitted |
+| Text vectors | Frozen, locally cached `BAAI/bge-small-en-v1.5` | 384-dimensional inference benchmark passed; all selected headlines cached |
 
-## AUB access lead
+The exact recipe retains 1,475 train, 315 validation and 317 test examples after boundary purging, capped at 16 unique headlines each. Use the complete trading calendar; never treat adjacent NIFTY rows as necessarily adjacent trading sessions. Never convert Neutral mechanically to zero or feed source answers into features.
 
-AUB's [Al Katami Trading Room software page](https://www.aub.edu.lb/osb/TradingRoom/Pages/Software-and-Technology.aspx) publicly lists Thomson Reuters Eikon on trading-room computers, but it does **not** establish that AUB has historical machine-readable News Analytics/TRNA, bulk export/API entitlements, or rights to use the data off campus. The trading room's [contact page](https://www.aub.edu.lb/osb/TradingRoom/Pages/Contact-Us.aspx) lists `osb@aub.edu.lb`. AUB Libraries also offers [Data Services](https://www.aub.edu.lb/Libraries/News/Pages/ProfessionalDataServices.aspx).
+## Why this choice
 
-Ask the professor or trading-room administrator specifically for historical **LSEG/Refinitiv News Analytics (TRNA)** with headlines, publication timestamps, positive/neutral/negative sentiment scores, and permission for a small research export. Ordinary Eikon/Workspace news access may be a different entitlement. Record the answer before choosing the final source.
+NIFTY is small enough to inspect completely, concerns an S&P 500 proxy, and supplies headline sets suitable for FININ's news interaction mechanism. Its prices and return alignment have now been checked numerically. Sentiment and timing substitutions are specified before modeling.
+
+FNSPID may support a future stock-level study. Its larger hosted files do not inherently make a small experiment impossible: streaming/selective extraction may be possible, but that path is not verified here and is unnecessary for version 1. The Reddit/DJIA and sparsely documented S&P 500 Kaggle candidates offer no verified improvement for this prototype.
+
+## Original data and AUB
+
+TRNA includes historical Reuters headlines and instrument-related sentiment. A smaller authorized subset could make a later experiment closer to the original. Access has not been established.
+
+AUB's [Al Katami Trading Room page](https://www.aub.edu.lb/osb/TradingRoom/Pages/Software-and-Technology.aspx) lists Thomson Reuters Eikon; that alone does not establish historical bulk News Analytics access. At the meeting, ask about a research export with headlines, publication timestamps and positive/neutral/negative scores. This does not block version 1.
+
+## Sources
+
+- [NIFTY](https://huggingface.co/datasets/raeidsaqur/NIFTY), pinned revision and checksums in `data/nifty_manifest.json`.
+- [NIFTY paper](https://www.cs.toronto.edu/~raeidsaqur/writings/nifty-dataset_raeid.saqur2024.pdf). Its return formula alone did not establish alignment to the released record date; direct checks resolved that ambiguity.
+- [Yahoo SPY history](https://finance.yahoo.com/quote/SPY/history/); exact verification request in the evidence report.
+- [Financial TinyBERT](https://huggingface.co/mikeysharma/finance-sentiment-analysis), [BGE-small](https://huggingface.co/BAAI/bge-small-en-v1.5), [FININ paper](https://aclanthology.org/2024.findings-emnlp.189/).

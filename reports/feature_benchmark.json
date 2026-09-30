@@ -1,0 +1,36 @@
+{
+  "device": "cpu",
+  "selected_unique_headlines": 32286,
+  "sample_size": 100,
+  "text": {
+    "load_seconds": 0.78,
+    "inference_seconds": 0.67,
+    "output_width": 384,
+    "truncated_texts": 0,
+    "peak_gpu_mib": null
+  },
+  "sentiment": {
+    "load_seconds": 0.26,
+    "inference_seconds": 0.14,
+    "output_width": 3,
+    "truncated_texts": 0,
+    "peak_gpu_mib": null,
+    "control_examples": {
+      "positive": [
+        0.9705498814582825,
+        0.012447870336472988,
+        0.01700221747159958
+      ],
+      "negative": [
+        0.01679367944598198,
+        0.016562210395932198,
+        0.9666441082954407
+      ],
+      "neutral": [
+        0.014918672852218151,
+        0.9813345670700073,
+        0.00374673237092793
+      ]
+    }
+  }
+}

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import statistics
 from collections import Counter
 from datetime import date
@@ -55,12 +56,19 @@ def audit_split(path: Path) -> dict:
             labels[str(row["label"])] += 1
             header_only_contexts += "\n" not in row["context"].strip()
             prompt = row["conversations"][0]["value"] if row["conversations"] else ""
-            if "Context:" in prompt:
-                context_section = prompt.split("Context:", 1)[1].split("\n\n", 1)[0]
-                context_lines = [part for part in context_section.splitlines() if part.strip()]
-                prompt_price_row_counts.append(max(0, len(context_lines) - 1))
-            else:
-                prompt_price_row_counts.append(0)
+            # Some prompts place headlines in the Context section too. Count
+            # dated numeric CSV records, not arbitrary section lines.
+            price_row_count = 0
+            for part in prompt.splitlines():
+                if not re.match(r"^\d{4}-\d{2}-\d{2},", part):
+                    continue
+                fields = part.split(",")
+                if len(fields) != 16:
+                    raise ValueError(f"{path.name}:{line_number}: malformed price row")
+                date.fromisoformat(fields[0])
+                tuple(float(value) for value in fields[1:])
+                price_row_count += 1
+            prompt_price_row_counts.append(price_row_count)
             missing_pct_change += row["pct_change"] is None
 
     if not dates:
@@ -153,10 +161,10 @@ def main() -> None:
             "## Interpretation for the next step",
             "",
             "- Dates are ordered and non-overlapping across splits (the audit would fail otherwise).",
-            "- We must choose and record a headline cap/selection rule before feature extraction.",
-            "- We need a verified SPY price series to derive the paper's binary next-day target. The conversation prompts may contain prior market-history rows, but they must be parsed and audited before use.",
-            "- The NIFTY dataset paper defines its supplied label from the change into the row's date, with a +/-0.5% neutral band. FININ requires a binary change after that date; do not train on the supplied label unchanged.",
-            "- The source has date-level news groupings, so release-time availability remains uncertain.",
+            "- The revised plan specifies exact within-day deduplication and a deterministic cap of 16 headlines per example.",
+            "- A separate full-data price/target check is documented in reports/plan_verification.md; this raw audit does not rerun that independent check.",
+            "- That check found all 2,111 supplied returns match next-trading-day SPY returns. Earlier documentation claiming current-day alignment was incorrect. The three-class label still differs from FININ's binary target.",
+            "- The revised plan derives binary targets from a separate verified SPY price snapshot and uses previous-trading-day news. Individual headline release-time availability remains uncertain.",
         ]
     )
     if all(result["header_only_contexts"] == result["rows"] for result in summary.values()):

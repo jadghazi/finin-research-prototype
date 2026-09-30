@@ -1,40 +1,44 @@
 # FININ research prototype
 
-This project will test the central idea of [Wang, Cohen, and Ma (2024)](https://aclanthology.org/2024.findings-emnlp.189/): whether modeling interactions among daily news headlines and weighting those headlines against the market helps predict next-trading-day direction.
+Goal: reproduce the core architecture of [Wang, Cohen and Ma (2024)](https://aclanthology.org/2024.findings-emnlp.189/) at student scale, run controlled experiments on a 16 GB RAM / GTX 1660 Ti workstation, and present saved results offline on an 8 GB laptop.
 
-This is a **method prototype on public proxy data**, not a numerical replication of the paper's Reuters/TRNA study. The detailed scope and differences are in [REPRODUCTION_PLAN.md](REPRODUCTION_PLAN.md). The data flow and intended code map are in [docs/architecture.md](docs/architecture.md).
+**Status: prototype implemented and measured.** Price and news preparation produces 2,107 dated examples. All 32,286 unique selected headlines have frozen text and sentiment features. Seven methods were compared on 317 held-out dates, including 18 trained runs. The model-integrity tests pass. See [held-out results](reports/results.md); the offline meeting walkthrough is generated at `artifacts/meeting/FININ_walkthrough.html`.
 
-## Where we are
+## Version 1 scope
 
-**Step 1: inspect candidate data.** The only executable code so far downloads and audits [NIFTY](https://huggingface.co/datasets/raeidsaqur/NIFTY), a public dated-headline dataset. There is no prediction model yet. The audit report is generated at `reports/data_audit.md`. NIFTY is a provisional choice; [docs/dataset_selection.md](docs/dataset_selection.md) records the comparison and what must pass before modeling.
+Use NIFTY financial headlines, separately snapshotted SPY prices and frozen financial TinyBERT sentiment probabilities. BGE-small supplies the frozen text vectors; the paper also evaluated BGE as a text encoder. Preserve FININ's text/numeric fusion, news self-attention, market-query attention and predictor. Cap news at 16 headlines/example with one input day. Compare simple baselines and ablations on identical held-out dates.
 
-## Reproduce Step 1
+Use the previous trading day's news at the forecast day's close and predict the next session's direction. This is an explicit timing adjustment for missing publication timestamps. The prototype's classification results cannot be directly compared with the paper's original Reuters-data scores. Its full model was close to an always-up prediction on this test period; balanced accuracy shows no convincing directional benefit from attention.
 
-Use Python 3.10 or later from a terminal in this folder (VS Code's terminal is fine):
+## Read in this order
+
+1. [Reproduction plan](REPRODUCTION_PLAN.md): fixed data/model choices, experiment, compute and work stages.
+2. [Dataset decision](docs/dataset_selection.md): every required field and its source.
+3. [Verification evidence](reports/plan_verification.md): measured checks, corrections and unknowns.
+4. [Architecture and code map](docs/architecture.md): diagrams and module-to-paper mapping.
+5. [Raw audit](reports/data_audit.md): news-file counts and quality checks.
+6. [Runbook](docs/runbook.md): commands, outputs and what to explain at each stage.
+7. [Held-out results](reports/results.md): measured comparison and interpretation.
+
+## Important correction
+
+All 2,111 supplied NIFTY returns match **next-trading-session** SPY returns. Earlier documentation claiming current-day alignment was incorrect. The three-class labels still differ from FININ's binary target, and the delayed-news protocol requires its own alignment. Targets were calculated explicitly from prices.
+
+Standalone `context` fields contain only a header, but prompts embed historical prices that have now been independently cross-checked. The planned separate price snapshot provides a complete calendar without production prompt parsing.
+
+## Existing audit commands
+
+These inspect the news source; they do not build or train the prototype. Python 3.10 or newer:
 
 ```powershell
 python scripts/01_download_nifty.py
 python scripts/02_audit_nifty.py
 ```
 
-The downloader pins one exact dataset revision in its source. It records source URLs, byte sizes, and SHA-256 hashes in `data/nifty_manifest.json`. The audit checks the three JSONL files and writes `reports/data_audit.md`.
+The downloader pins a revision and records checksums in `data/nifty_manifest.json`. The raw audit verifies them and inspects records. `scripts/03_prepare_data.py` independently compares all 2,111 supplied returns with the frozen SPY price series and stops if alignment fails.
 
-The first audit found that all standalone `context` fields contain only a header; market-history rows are embedded in the `conversations` prompts instead. We must inspect those rows and verify SPY prices before defining the binary target. The audit also found a large decline in headlines per day between the training and test periods; this is a real limitation of this proxy dataset.
+## Portability and version control
 
-The NIFTY authors define its three-class label from the move **into** a row's date. FININ's target is the move **after** that date. We will derive the latter from verified prices and will not train on NIFTY's supplied labels.
+Local Git is initialized. No GitHub repository is published. Version code, configuration, documentation, manifests and compact reports. Keep raw data and model/cache files outside a public repository and provide acquisition commands plus a separate private transfer where needed.
 
-Raw downloaded headlines are kept in `data/raw/nifty/` and excluded from Git. The source dataset card lists an MIT license, but the headlines originate from news publishers; check redistribution rights before publishing any raw data. The manifest and audit report are safe to keep with the project.
-
-## Planned code map
-
-| File | Role |
-| --- | --- |
-| `scripts/01_download_nifty.py` | Fetch the pinned headline dataset and record checksums |
-| `scripts/02_audit_nifty.py` | Inspect schema, dates, volume, labels, and missing values |
-| `scripts/03_prepare_examples.py` | **Planned:** join headlines with SPY prices and create time-safe examples |
-| `scripts/04_cache_text_features.py` | **Planned:** extract and save frozen text vectors |
-| `src/model.py` | **Planned:** news attention, market attention, prediction head |
-| `scripts/05_train.py` | **Planned:** fit baselines and prototype using training/validation dates |
-| `scripts/06_evaluate.py` | **Planned:** held-out comparisons and diagnostic plots |
-
-Each script should have one job and print its inputs and outputs. We will implement later stages only after checking the data and target definition.
+The laptop meeting package is in `artifacts/meeting/`: a self-contained HTML report, saved predictions and speaking notes. Copy that folder to the laptop; presentation requires no Python, CUDA or model weights. The raw data, feature arrays and trained checkpoints remain on the workstation and are excluded from Git.
