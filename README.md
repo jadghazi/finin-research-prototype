@@ -19,7 +19,7 @@ python scripts/02_audit_nifty.py
 
 The downloader pins one exact dataset revision in its source. It records source URLs, byte sizes, and SHA-256 hashes in `data/nifty_manifest.json`. The audit checks the three JSONL files and writes `reports/data_audit.md`.
 
-The first audit found that all `context` fields contain only a header, so they do not provide usable price history. A separate SPY daily price file is required before modeling. The audit also found a large decline in headlines per day between the training and test periods; this is a real limitation of this proxy dataset.
+The first audit found that all standalone `context` fields contain only a header; market-history rows are embedded in the `conversations` prompts instead. We must inspect those rows and verify SPY prices before defining the binary target. The audit also found a large decline in headlines per day between the training and test periods; this is a real limitation of this proxy dataset.
 
 Raw downloaded headlines are kept in `data/raw/nifty/` and excluded from Git. The source dataset card lists an MIT license, but the headlines originate from news publishers; check redistribution rights before publishing any raw data. The manifest and audit report are safe to keep with the project.
 

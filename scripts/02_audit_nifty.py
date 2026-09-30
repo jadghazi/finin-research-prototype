@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RAW_DIR = ROOT / "data" / "raw" / "nifty"
 MANIFEST_PATH = ROOT / "data" / "nifty_manifest.json"
 REPORT_PATH = ROOT / "reports" / "data_audit.md"
-REQUIRED_FIELDS = {"date", "news", "label", "pct_change", "context"}
+REQUIRED_FIELDS = {"date", "news", "label", "pct_change", "context", "conversations"}
 
 
 def sha256_file(path: Path) -> str:
@@ -32,6 +32,7 @@ def audit_split(path: Path) -> dict:
     duplicate_headlines = 0
     empty_news_days = 0
     header_only_contexts = 0
+    prompt_price_row_counts: list[int] = []
     missing_pct_change = 0
     weekend_dates = 0
 
@@ -53,6 +54,13 @@ def audit_split(path: Path) -> dict:
             duplicate_headlines += len(headlines) - len(set(headlines))
             labels[str(row["label"])] += 1
             header_only_contexts += "\n" not in row["context"].strip()
+            prompt = row["conversations"][0]["value"] if row["conversations"] else ""
+            if "Context:" in prompt:
+                context_section = prompt.split("Context:", 1)[1].split("\n\n", 1)[0]
+                context_lines = [part for part in context_section.splitlines() if part.strip()]
+                prompt_price_row_counts.append(max(0, len(context_lines) - 1))
+            else:
+                prompt_price_row_counts.append(0)
             missing_pct_change += row["pct_change"] is None
 
     if not dates:
@@ -74,6 +82,10 @@ def audit_split(path: Path) -> dict:
         "duplicate_headlines_within_day": duplicate_headlines,
         "empty_news_days": empty_news_days,
         "header_only_contexts": header_only_contexts,
+        "prompt_price_rows_min": min(prompt_price_row_counts),
+        "prompt_price_rows_median": statistics.median(prompt_price_row_counts),
+        "prompt_price_rows_max": max(prompt_price_row_counts),
+        "prompts_without_price_rows": sum(count == 0 for count in prompt_price_row_counts),
         "missing_pct_change": missing_pct_change,
         "weekend_dates": weekend_dates,
         "labels": dict(sorted(labels.items())),
@@ -128,6 +140,8 @@ def main() -> None:
                 f"- Empty-news dates: {result['empty_news_days']:,}",
                 f"- Duplicate headline strings within a date: {result['duplicate_headlines_within_day']:,}",
                 f"- Context fields with only a header/one line: {result['header_only_contexts']:,}",
+                f"- Market-history rows embedded in conversation prompt (min/median/max): {result['prompt_price_rows_min']}/{result['prompt_price_rows_median']:g}/{result['prompt_price_rows_max']}",
+                f"- Prompts with no embedded market-history rows: {result['prompts_without_price_rows']:,}",
                 f"- Missing `pct_change`: {result['missing_pct_change']:,}",
                 f"- Weekend dates: {result['weekend_dates']:,}",
                 "",
@@ -140,12 +154,12 @@ def main() -> None:
             "",
             "- Dates are ordered and non-overlapping across splits (the audit would fail otherwise).",
             "- We must choose and record a headline cap/selection rule before feature extraction.",
-            "- We must obtain and validate a separate SPY price series to supply market features and derive the paper's binary next-day target.",
+            "- We need a verified SPY price series to derive the paper's binary next-day target. The conversation prompts may contain prior market-history rows, but they must be parsed and audited before use.",
             "- The source has date-level news groupings, so release-time availability remains uncertain.",
         ]
     )
     if all(result["header_only_contexts"] == result["rows"] for result in summary.values()):
-        lines.append("- Every `context` field contains only a header/one line; it cannot supply the market history described in the dataset card.")
+        lines.append("- Every standalone `context` field contains only a header/one line. Market-history rows are instead embedded in the `conversations` prompt.")
     if summary["train"]["median_news"] >= 2 * summary["test"]["median_news"]:
         lines.append("- Headline volume falls sharply from training to testing. The experiment must report this coverage shift and should compare models on identical dates.")
     lines.append("")
