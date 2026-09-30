@@ -23,3 +23,9 @@ Sources for NIFTY construction and labels: [NIFTY dataset paper](https://www.cs.
 5. State the information cutoff precisely. Without item timestamps, the dataset cannot substantiate intraday availability or realistic close-to-close trading returns.
 
 If the price/target audit fails or the news coverage shift makes results unusable, switch to a documented fallback and change the research claim accordingly. The repository's data-preparation code should isolate source-specific parsing so the model can still be reused.
+
+## AUB access lead
+
+AUB's [Al Katami Trading Room software page](https://www.aub.edu.lb/osb/TradingRoom/Pages/Software-and-Technology.aspx) publicly lists Thomson Reuters Eikon on trading-room computers, but it does **not** establish that AUB has historical machine-readable News Analytics/TRNA, bulk export/API entitlements, or rights to use the data off campus. The trading room's [contact page](https://www.aub.edu.lb/osb/TradingRoom/Pages/Contact-Us.aspx) lists `osb@aub.edu.lb`. AUB Libraries also offers [Data Services](https://www.aub.edu.lb/Libraries/News/Pages/ProfessionalDataServices.aspx).
+
+Ask the professor or trading-room administrator specifically for historical **LSEG/Refinitiv News Analytics (TRNA)** with headlines, publication timestamps, positive/neutral/negative sentiment scores, and permission for a small research export. Ordinary Eikon/Workspace news access may be a different entitlement. Record the answer before choosing the final source.
