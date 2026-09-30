@@ -22,7 +22,7 @@ Source: Wang, Cohen, and Ma, *Modeling News Interactions and Influence for Finan
 
 **Alternative if the professor wants ticker-level news:** FNSPID (https://huggingface.co/datasets/Zihan1004/FNSPID; https://github.com/Zdong104/FNSPID_Financial_News_Dataset) has item-level stock news, prices, and sentiment, but the full hosted collection is about 29.6 GB. Select a small subset by ticker/date; inspect timestamp quality and missing sentiments before using it. It is a different prediction problem if the target is an individual stock. The dataset card states CC BY-NC 4.0. Do not commit a full data dump to GitHub.
 
-**Original data:** Reuters/TRNA is not included in the project folder or the paper. Ask the professor whether the university has licensed access; an exact data replication depends on that.
+**Original data, first choice if available:** Reuters/TRNA is not included in the project folder or the paper. Ask the professor whether the university has licensed historical News Analytics access, including headlines and sentiment scores. If available, use a smaller slice of the **same source** (one index, roughly 2-3 years, and a fixed maximum of 16-32 headlines per day) before using a proxy dataset. This preserves more of the paper's setup, though it will not reproduce the paper's full-sample scores.
 
 ## Minimal experiment
 
