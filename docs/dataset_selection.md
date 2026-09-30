@@ -1,0 +1,24 @@
+# Dataset selection: provisional decision
+
+**Decision:** keep NIFTY as the leading candidate for a small **FININ mechanism demonstration**, but do not call it the best dataset or begin model training until its price/target alignment passes the checks below. It cannot support a strong claim of causal news impact or a faithful numerical replication of the Reuters/TRNA study.
+
+## Comparison as of 2026-09-30
+
+| Candidate | Why it helps | Main limitation for this project | Decision |
+| --- | --- | --- | --- |
+| [NIFTY](https://huggingface.co/datasets/raeidsaqur/NIFTY) | Dated financial headlines tied to SPY, an S&P 500 proxy; 2,111 dated examples; ~44 MB downloaded. The authors describe finance-topic filtering. | No individual headline release times or Reuters sentiment. Its supplied three-class label is the price move **into** the row date, so it is not FININ's next-day binary target. Our audit found median headlines/day fall from 78 in train to 26 in test, plus 18,932 duplicate headline strings within training days. `context` has only a header, although historical price rows appear in `conversations`. | **Provisional first choice** for architecture testing, subject to the checks below. |
+| [Daily News for Stock Market Prediction / DJIA copy](https://github.com/Currie32/Predicting-the-Dow-Jones-with-Headlines) | Small and easy to inspect; the reviewed copy has 73,608 headline rows across 2,943 dates and 1,989 DJIA price rows, with usually 25 headlines/day. | Headlines are Reddit WorldNews top stories, not necessarily financial; no per-headline release times or provided sentiment. The target market changes from an S&P 500 proxy to DJIA. Popularity-based selection may depend on when votes were counted. | Simpler **fallback for an engineering demo**, weaker match to FININ's financial news question. |
+| [FNSPID](https://huggingface.co/datasets/Zihan1004/FNSPID) | Large item-level stock news/price collection and sentiment fields; potentially useful for later ticker-level work. | Focuses on individual stocks rather than an index. The hosted files include ~5.7 GB and ~23.2 GB news CSVs and a ~590 MB price ZIP; a tiny subset cannot be selected by downloading one small source file. Some previewed sentiment values are null. | **Not the first prototype dataset** on this hardware/time budget. |
+| [S&P 500 with Financial News Headlines (2008-2024)](https://www.kaggle.com/datasets/dyutidasmahaptra/s-and-p-500-with-financial-news-headlines-20082024) | Exact index and an easily sized file; its card describes more than 19,000 headline rows with closing prices. | Far fewer headlines per day than NIFTY, and the reviewed card does not establish per-headline timestamps or the source/selection process needed for a careful prediction study. | Possible backup only after an independent audit. |
+
+Sources for NIFTY construction and labels: [NIFTY dataset paper](https://www.cs.toronto.edu/~raeidsaqur/writings/nifty-dataset_raeid.saqur2024.pdf), sections 2.1-2.3. Source for FNSPID scale: [FNSPID dataset card](https://huggingface.co/datasets/Zihan1004/FNSPID). Local NIFTY counts and quality checks: [`reports/data_audit.md`](../reports/data_audit.md). The DJIA counts above come from inspecting the CSVs linked by its repository; the Kaggle size/description comes from its public dataset metadata.
+
+## Checks before accepting NIFTY
+
+1. Parse its prompt market-history rows and confirm every included price date precedes the row's headline date. Compare sampled prices with an independent SPY source.
+2. Build `y_d = 1[close(d+1) > close(d)]` from verified prices, using the *next trading day* on the price calendar. Never use the supplied `label` or `pct_change` as that target.
+3. Count how many dated examples join to prices and how many are lost in each split. Keep the published chronological boundaries and exclude incomplete final targets.
+4. Inspect selected headlines across early and late years. Document the large coverage shift and choose a fixed cap/selection rule before looking at test performance.
+5. State the information cutoff precisely. Without item timestamps, the dataset cannot substantiate intraday availability or realistic close-to-close trading returns.
+
+If the price/target audit fails or the news coverage shift makes results unusable, switch to a documented fallback and change the research claim accordingly. The repository's data-preparation code should isolate source-specific parsing so the model can still be reused.

@@ -52,6 +52,7 @@ This audit describes the downloaded source files only. It does **not** establish
 - Dates are ordered and non-overlapping across splits (the audit would fail otherwise).
 - We must choose and record a headline cap/selection rule before feature extraction.
 - We need a verified SPY price series to derive the paper's binary next-day target. The conversation prompts may contain prior market-history rows, but they must be parsed and audited before use.
+- The NIFTY dataset paper defines its supplied label from the change into the row's date, with a +/-0.5% neutral band. FININ requires a binary change after that date; do not train on the supplied label unchanged.
 - The source has date-level news groupings, so release-time availability remains uncertain.
 - Every standalone `context` field contains only a header/one line. Market-history rows are instead embedded in the `conversations` prompt.
 - Headline volume falls sharply from training to testing. The experiment must report this coverage shift and should compare models on identical dates.

@@ -6,7 +6,7 @@ This is a **method prototype on public proxy data**, not a numerical replication
 
 ## Where we are
 
-**Step 1: inspect data.** The only executable code so far downloads and audits [NIFTY](https://huggingface.co/datasets/raeidsaqur/NIFTY), a public dated-headline dataset. There is no prediction model yet. The audit report is generated at `reports/data_audit.md`.
+**Step 1: inspect candidate data.** The only executable code so far downloads and audits [NIFTY](https://huggingface.co/datasets/raeidsaqur/NIFTY), a public dated-headline dataset. There is no prediction model yet. The audit report is generated at `reports/data_audit.md`. NIFTY is a provisional choice; [docs/dataset_selection.md](docs/dataset_selection.md) records the comparison and what must pass before modeling.
 
 ## Reproduce Step 1
 
@@ -20,6 +20,8 @@ python scripts/02_audit_nifty.py
 The downloader pins one exact dataset revision in its source. It records source URLs, byte sizes, and SHA-256 hashes in `data/nifty_manifest.json`. The audit checks the three JSONL files and writes `reports/data_audit.md`.
 
 The first audit found that all standalone `context` fields contain only a header; market-history rows are embedded in the `conversations` prompts instead. We must inspect those rows and verify SPY prices before defining the binary target. The audit also found a large decline in headlines per day between the training and test periods; this is a real limitation of this proxy dataset.
+
+The NIFTY authors define its three-class label from the move **into** a row's date. FININ's target is the move **after** that date. We will derive the latter from verified prices and will not train on NIFTY's supplied labels.
 
 Raw downloaded headlines are kept in `data/raw/nifty/` and excluded from Git. The source dataset card lists an MIT license, but the headlines originate from news publishers; check redistribution rights before publishing any raw data. The manifest and audit report are safe to keep with the project.
 
