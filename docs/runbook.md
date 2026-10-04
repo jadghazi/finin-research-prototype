@@ -65,11 +65,12 @@ What to explain: compare the complete model with prices only, average sentiment,
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/06_export_results.py
+.\.venv\Scripts\python.exe scripts/07_build_meeting_handout.py
 ```
 
-Show `artifacts/meeting/FININ_walkthrough.html`. It is a single offline page with the pipeline, worked dates, comparison chart, metrics and example predictions. `artifacts/meeting/predictions.csv` contains the complete selected run's test predictions, and `artifacts/meeting/talking_points.md` is a short speaking script. The tracked [results report](../reports/results.md) contains the same metrics in text form.
+Show `output/pdf/FININ_pipeline_and_data_comparison.pdf` first. Its two pages map the paper's pipeline to ours and compare the data and evaluation protocols, with source notes. The PDF is built as vector graphics from `scripts/07_build_meeting_handout.py` and needs no raw dataset to regenerate. Then open `artifacts/meeting/FININ_walkthrough.html` for the worked dates, comparison chart, metrics and example predictions. `artifacts/meeting/predictions.csv` contains the complete selected run's test predictions, and `artifacts/meeting/talking_points.md` is a short speaking script. The tracked [results report](../reports/results.md) contains the same metrics in text form.
 
-Copy the `artifacts/meeting/` folder to the laptop by USB or another private transfer. It does not require installing Python, CUDA or model weights on the laptop. Open the HTML file locally once before the meeting to confirm it displays correctly.
+Copy the PDF and `artifacts/meeting/` folder to the laptop by USB or another private transfer. Displaying them does not require Python, CUDA or model weights. Open both files locally once before the meeting to confirm they display correctly.
 
 ## Data and interpretation boundaries
 
