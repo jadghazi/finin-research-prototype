@@ -1,48 +1,19 @@
 # FININ research prototype
 
-Goal: reproduce the core architecture of [Wang, Cohen and Ma (2024)](https://aclanthology.org/2024.findings-emnlp.189/) at student scale, run controlled experiments on a 16 GB RAM / GTX 1660 Ti workstation, and present saved results offline on an 8 GB laptop.
+A small reproduction of the main architecture in [Wang, Cohen and Ma (2024)](https://aclanthology.org/2024.findings-emnlp.189/): headline self-attention, market-conditioned headline weighting, and next-session direction prediction. This version uses NIFTY headlines, SPY prices, frozen BGE-small text features, and generated financial sentiment. It is an architectural prototype, not a numerical replication of the Reuters study.
 
-**Status: prototype implemented and measured.** Price and news preparation produces 2,107 dated examples. All 32,286 unique selected headlines have frozen text and sentiment features. Seven methods were compared on 317 held-out dates, including 18 trained runs. The model-integrity tests pass. See [held-out results](reports/results.md); the offline meeting walkthrough is generated at `artifacts/meeting/FININ_walkthrough.html`.
+## For the professor meeting
 
-**Meeting report and independent recheck (4 October 2026).** The five-page [progress report](output/pdf/FININ_progress_report.pdf) and [editable LaTeX source](output/pdf/FININ_progress_report.tex) compare the paper with our architecture, datasets, results and code skeleton. The [audit](reports/prototype_audit.json) rebuilds every example and replays all 18 checkpoints, including validation selection and attention diagnostics. A training-prior probability reference was added to clarify the near-majority-class result. See [meeting notes and rebuild instructions](docs/meeting_guide.md).
+Open the [two-page visual brief](output/pdf/FININ_meeting_brief.pdf) first. It compares the paper and prototype pipelines, datasets, timing, and measured result. The [detailed progress report](output/pdf/FININ_progress_report.pdf), [offline walkthrough](artifacts/meeting/FININ_walkthrough.html), [saved predictions](artifacts/meeting/predictions.csv), and [paper PDF](paper/Wang%20et%20al.%20-%202024%20-%20Modeling%20News%20Interactions%20and%20Influence%20for%20Financial%20Market%20Prediction.pdf) are also included. The PDFs have editable LaTeX sources beside them. These meeting files open without Python or internet access.
 
-**For the meeting, start here:** the [two-page visual brief](output/pdf/FININ_meeting_brief.pdf) presents only the essential pipeline comparison, data differences, prototype status and result. [Editable LaTeX](output/pdf/FININ_meeting_brief.tex).
+## Code and reproducibility
 
-## Version 1 scope
+- [Reproduction plan](REPRODUCTION_PLAN.md): data, model, and evaluation choices.
+- [Architecture and code map](docs/architecture.md): pipeline diagram and module responsibilities.
+- [Runbook](docs/runbook.md): setup, preparation, training, evaluation, and report commands.
+- [Prepared-data report](reports/data_preparation.md), [source audit](reports/data_audit.md), and [held-out results](reports/results.md): generated checks and measurements.
+- [Prototype audit](reports/prototype_audit.json): compact reconstruction and checkpoint checks.
 
-Use NIFTY financial headlines, separately snapshotted SPY prices and frozen financial TinyBERT sentiment probabilities. BGE-small supplies the frozen text vectors; the paper also evaluated BGE as a text encoder. Preserve FININ's text/numeric fusion, news self-attention, market-query attention and predictor. Cap news at 16 headlines/example with one input day. Compare simple baselines and ablations on identical held-out dates.
+The prototype prepared 2,107 dated examples and evaluated seven methods on 317 held-out dates. Across three seeds, reduced FININ reached 58.4% accuracy versus 58.0% for always predicting up; balanced accuracy was 50.4%. It mostly predicted up, so this experiment has not shown a clear directional benefit from news attention.
 
-Use the previous trading day's news at the forecast day's close and predict the next session's direction. This is an explicit timing adjustment for missing publication timestamps. The prototype's classification results cannot be directly compared with the paper's original Reuters-data scores. Its full model was close to an always-up prediction on this test period; balanced accuracy shows no convincing directional benefit from attention.
-
-## Read in this order
-
-1. [Reproduction plan](REPRODUCTION_PLAN.md): fixed data/model choices, experiment, compute and work stages.
-2. [Dataset decision](docs/dataset_selection.md): every required field and its source.
-3. [Verification evidence](reports/plan_verification.md): measured checks, corrections and unknowns.
-4. [Architecture and code map](docs/architecture.md): diagrams and module-to-paper mapping.
-5. [Raw audit](reports/data_audit.md): news-file counts and quality checks.
-6. [Runbook](docs/runbook.md): commands, outputs and what to explain at each stage.
-7. [Held-out results](reports/results.md): measured comparison and interpretation.
-
-## Important correction
-
-All 2,111 supplied NIFTY returns match **next-trading-session** SPY returns. Earlier documentation claiming current-day alignment was incorrect. The three-class labels still differ from FININ's binary target, and the delayed-news protocol requires its own alignment. Targets were calculated explicitly from prices.
-
-Standalone `context` fields contain only a header, but prompts embed historical prices that have now been independently cross-checked. The planned separate price snapshot provides a complete calendar without production prompt parsing.
-
-## Existing audit commands
-
-These inspect the news source; they do not build or train the prototype. Python 3.10 or newer:
-
-```powershell
-python scripts/01_download_nifty.py
-python scripts/02_audit_nifty.py
-```
-
-The downloader pins a revision and records checksums in `data/nifty_manifest.json`. The raw audit verifies them and inspects records. `scripts/03_prepare_data.py` independently compares all 2,111 supplied returns with the frozen SPY price series and stops if alignment fails.
-
-## Portability and version control
-
-Local Git is initialized. No GitHub repository is published. Version code, configuration, documentation, manifests and compact reports. Keep raw data and model/cache files outside a public repository and provide acquisition commands plus a separate private transfer where needed.
-
-The laptop meeting package is in `artifacts/meeting/`: a self-contained HTML report, saved predictions and speaking notes. A concise two-page [paper-versus-prototype handout](output/pdf/FININ_pipeline_and_data_comparison.pdf) maps both pipelines and datasets; its editable builder is `scripts/07_build_meeting_handout.py`. Copy the meeting folder and PDF to the laptop; presentation requires no Python, CUDA or model weights. The raw data, feature arrays and trained checkpoints remain on the workstation and are excluded from Git.
+Raw datasets, feature arrays, and checkpoints are excluded from Git. Use the runbook to rebuild them on a training machine; the saved meeting materials and code are available in this repository.

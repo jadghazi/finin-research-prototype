@@ -29,7 +29,7 @@ These choices define version 1. Extra markets, alternative datasets, longer look
 
 ## What has actually been verified
 
-Details are in [the verification report](reports/plan_verification.md).
+The current reconstruction checks are saved in [the prototype audit](reports/prototype_audit.json).
 
 - Read FININ sections 3-5, Figure 2 and Appendix A/B against the local PDF.
 - Compared every NIFTY row with a separately retrieved Yahoo SPY price series: **all 2,111 supplied returns match next-trading-day returns within source rounding precision.** The previous assertion that they describe movement into the row date was incorrect.

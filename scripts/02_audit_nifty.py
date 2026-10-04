@@ -162,7 +162,7 @@ def main() -> None:
             "",
             "- Dates are ordered and non-overlapping across splits (the audit would fail otherwise).",
             "- The revised plan specifies exact within-day deduplication and a deterministic cap of 16 headlines per example.",
-            "- A separate full-data price/target check is documented in reports/plan_verification.md; this raw audit does not rerun that independent check.",
+            "- The separate full-data price/target check runs in scripts/03_prepare_data.py; this raw audit does not rerun it.",
             "- That check found all 2,111 supplied returns match next-trading-day SPY returns. Earlier documentation claiming current-day alignment was incorrect. The three-class label still differs from FININ's binary target.",
             "- The revised plan derives binary targets from a separate verified SPY price snapshot and uses previous-trading-day news. Individual headline release-time availability remains uncertain.",
         ]

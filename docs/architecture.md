@@ -72,4 +72,4 @@ The table maps each code file to a concrete job. The benchmark, integrity tests 
 
 Each example records news date, forecast date, target date, selected headline IDs, split and target. Caches record model revisions. Runs record code/data fingerprint, environment, seeds, timing and held-out predictions. The presentation explains transformations using worked examples and the paper-to-prototype comparison.
 
-See [the full plan](../REPRODUCTION_PLAN.md) and [verification report](../reports/plan_verification.md).
+See [the full plan](../REPRODUCTION_PLAN.md) and [prototype audit](../reports/prototype_audit.json).
