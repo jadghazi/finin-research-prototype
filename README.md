@@ -1,19 +1,38 @@
-# FININ research prototype
+# FININ Research Prototype
 
-A small reproduction of the main architecture in [Wang, Cohen and Ma (2024)](https://aclanthology.org/2024.findings-emnlp.189/): headline self-attention, market-conditioned headline weighting, and next-session direction prediction. This version uses NIFTY headlines, SPY prices, frozen BGE-small text features, and generated financial sentiment. It is an architectural prototype, not a numerical replication of the Reuters study.
+An independent, reduced-scale implementation of the core pipeline in [FININ: Modeling News Interactions and Influence for Financial Market Prediction](https://aclanthology.org/2024.findings-emnlp.189/) (Wang, Cohen, and Ma, 2024).
 
-## For the professor meeting
+## Research objective
 
-Open the [two-page visual brief](output/pdf/FININ_meeting_brief.pdf) first. It compares the paper and prototype pipelines, datasets, timing, and measured result. The [detailed progress report](output/pdf/FININ_progress_report.pdf), [offline walkthrough](artifacts/meeting/FININ_walkthrough.html), [saved predictions](artifacts/meeting/predictions.csv), and [paper PDF](paper/Wang%20et%20al.%20-%202024%20-%20Modeling%20News%20Interactions%20and%20Influence%20for%20Financial%20Market%20Prediction.pdf) are also included. The PDFs have editable LaTeX sources beside them. These meeting files open without Python or internet access.
+FININ studies whether relationships among financial news items, together with the current market state, help predict market direction. This project reproduces its main computational idea: encode news and market inputs, model interactions among headlines, use the market representation to weight the headlines, and predict whether the next trading session closes higher.
 
-## Code and reproducibility
+The prototype tests that architecture on accessible data. It is an independent study rather than an exact replication of the paper's Reuters-based experiments.
 
-- [Reproduction plan](REPRODUCTION_PLAN.md): data, model, and evaluation choices.
-- [Architecture and code map](docs/architecture.md): pipeline diagram and module responsibilities.
-- [Runbook](docs/runbook.md): setup, preparation, training, evaluation, and report commands.
-- [Prepared-data report](reports/data_preparation.md), [source audit](reports/data_audit.md), and [held-out results](reports/results.md): generated checks and measurements.
-- [Prototype audit](reports/prototype_audit.json): compact reconstruction and checkpoint checks.
+## Implemented pipeline
 
-The prototype prepared 2,107 dated examples and evaluated seven methods on 317 held-out dates. Across three seeds, reduced FININ reached 58.4% accuracy versus 58.0% for always predicting up; balanced accuracy was 50.4%. It mostly predicted up, so this experiment has not shown a clear directional benefit from news attention.
+1. **Prepare examples:** align dated NIFTY headlines with SPY market data and next-session direction labels. Because the news source lacks publication times, each forecast uses headlines from the preceding trading session.
+2. **Encode inputs:** create frozen BGE-small text representations and financial TinyBERT sentiment probabilities; transform numerical and text inputs with learned projection and fusion layers.
+3. **Model news interactions:** apply self-attention across the selected headlines for each example.
+4. **Condition on the market:** use the market representation to score headlines and form an attention-weighted news summary.
+5. **Predict and evaluate:** combine market and news representations in an MLP classifier; compare against simple baselines and controlled ablations on held-out dates.
 
-Raw datasets, feature arrays, and checkpoints are excluded from Git. Use the runbook to rebuild them on a training machine; the saved meeting materials and code are available in this repository.
+The [architecture and code map](docs/architecture.md) connects these stages to the implementation.
+
+## Experimental scope and findings
+
+| | Original FININ study | This prototype |
+| --- | --- | --- |
+| News | Reuters news and sentiment | NIFTY headlines; generated sentiment |
+| Market | S&P 500 and NASDAQ 100 indices | SPY price series as an S&P 500 proxy |
+| History per prediction | Up to 20 input days | One input day |
+| Evaluation | Multiple time windows | One chronological split; three training seeds |
+
+The prototype produced 2,107 dated examples, split into 1,475 training, 315 validation, and 317 test examples. On the test dates, reduced FININ averaged **58.4% accuracy** and **50.4% balanced accuracy** across three seeds. Always predicting up reached **58.0% accuracy** and **50.0% balanced accuracy**. The model predicted up on nearly every test date, so this experiment does not establish a useful directional gain from news attention.
+
+See the [full results](reports/results.md) and [two-page research brief](output/pdf/FININ_meeting_brief.pdf) for the comparisons and limitations.
+
+## Reproducibility
+
+The [runbook](docs/runbook.md) covers environment setup, data preparation, feature caching, training, evaluation, and verification. The [reproduction plan](REPRODUCTION_PLAN.md) records the fixed data and model choices. Source manifests, generated data checks, and a [prototype audit](reports/prototype_audit.json) are tracked. Raw datasets, feature arrays, and checkpoints are excluded from Git; the runbook explains how to rebuild them.
+
+The original [paper PDF](paper/Wang%20et%20al.%20-%202024%20-%20Modeling%20News%20Interactions%20and%20Influence%20for%20Financial%20Market%20Prediction.pdf) is included for reference. It is an ACL Anthology publication distributed under [CC BY 4.0](https://aclanthology.org/faq/copyright/).
