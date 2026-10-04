@@ -66,7 +66,9 @@ The table maps each code file to a concrete job. The benchmark, integrity tests 
 | `src/models/baselines.py` | Baselines and controlled ablations |
 | `src/training.py` | Training loop, early stopping, seeds and checkpoints |
 | `src/evaluation.py` | Classification metrics and per-date predictions |
-| `tests/` | Date/target integrity, masking invariance and tiny-batch learning checks |
+| `tests/` | Date/target integrity, masking invariance and gradient checks |
+| `scripts/08_verify_prototype.py` | Rebuild data, replay all checkpoints, verify attention diagnostics and fit a tiny training batch |
+| `scripts/09_build_progress_report.py` | Refresh measured results in the LaTeX meeting report and compile it |
 
 Each example records news date, forecast date, target date, selected headline IDs, split and target. Caches record model revisions. Runs record code/data fingerprint, environment, seeds, timing and held-out predictions. The presentation explains transformations using worked examples and the paper-to-prototype comparison.
 

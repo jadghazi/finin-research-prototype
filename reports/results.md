@@ -24,7 +24,7 @@ Six trainable variants each ran with seeds 17, 42 and 73. Variation across seeds
 
 ## Reading the result
 
-The full model's mean accuracy is 0.584; mean pooling is 0.580; always predicting up is 0.580. The full-model seeds predicted up on 312–317 of 317 dates, while 184 dates actually rose. Their near-0.5 balanced accuracy shows that most of the apparent accuracy comes from the up-day majority. This experiment does not provide evidence that news attention improved directional classification over the simpler alternatives. It does not reproduce the paper's reported scores.
+The full model's mean accuracy is 0.584; mean pooling is 0.580; always predicting up is 0.580. The full-model seeds predicted up on 312–317 of 317 dates, while 184 dates actually rose. Their near-0.5 balanced accuracy shows that most of the apparent accuracy comes from the up-day majority. This experiment does not provide evidence that news attention improved directional classification over the simpler alternatives. It does not reproduce the paper's reported scores. An audit-added constant probability reference uses only the training up-rate (0.5471) and has test log loss 0.6824, versus 0.6816 for reduced FININ. This is a fairer probability comparison than assigning probability 1 to every day.
 
 Accuracy is the share of correct directions. Balanced accuracy averages recall for up and down days, so it reveals models that mostly predict one class. Log loss also checks whether predicted probabilities are sensible; lower is better. The always-up baseline assigns a probability of 1.0, so its log loss sharply penalizes every down day; use its accuracy and balanced accuracy for the directional comparison.
 

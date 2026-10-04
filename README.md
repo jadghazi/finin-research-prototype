@@ -4,6 +4,10 @@ Goal: reproduce the core architecture of [Wang, Cohen and Ma (2024)](https://acl
 
 **Status: prototype implemented and measured.** Price and news preparation produces 2,107 dated examples. All 32,286 unique selected headlines have frozen text and sentiment features. Seven methods were compared on 317 held-out dates, including 18 trained runs. The model-integrity tests pass. See [held-out results](reports/results.md); the offline meeting walkthrough is generated at `artifacts/meeting/FININ_walkthrough.html`.
 
+**Meeting report and independent recheck (4 October 2026).** The five-page [progress report](output/pdf/FININ_progress_report.pdf) and [editable LaTeX source](output/pdf/FININ_progress_report.tex) compare the paper with our architecture, datasets, results and code skeleton. The [audit](reports/prototype_audit.json) rebuilds every example and replays all 18 checkpoints, including validation selection and attention diagnostics. A training-prior probability reference was added to clarify the near-majority-class result. See [meeting notes and rebuild instructions](docs/meeting_guide.md).
+
+**For the meeting, start here:** the [two-page visual brief](output/pdf/FININ_meeting_brief.pdf) presents only the essential pipeline comparison, data differences, prototype status and result. [Editable LaTeX](output/pdf/FININ_meeting_brief.tex).
+
 ## Version 1 scope
 
 Use NIFTY financial headlines, separately snapshotted SPY prices and frozen financial TinyBERT sentiment probabilities. BGE-small supplies the frozen text vectors; the paper also evaluated BGE as a text encoder. Preserve FININ's text/numeric fusion, news self-attention, market-query attention and predictor. Cap news at 16 headlines/example with one input day. Compare simple baselines and ablations on identical held-out dates.

@@ -105,6 +105,19 @@ def main() -> None:
         "news attention improved directional classification over the simpler alternatives. It "
         "does not reproduce the paper's reported scores."
     )
+    # Probability reference added during the October audit; train labels only.
+    # This supplements reporting without altering the original trained runs.
+    from src.evaluation import classification_metrics
+    train_summary = prepared['split_summary']['train']
+    prior = train_summary['up_targets'] / train_summary['examples']
+    test_targets = [row['target_up'] for row in runs[0]['predictions']]
+    prior_metrics = classification_metrics(test_targets, [prior] * len(test_targets))
+    finding += (
+        f" An audit-added constant probability reference uses only the training up-rate "
+        f"({prior:.4f}) and has test log loss {prior_metrics['log_loss']:.4f}, "
+        f"versus {summary(runs, 'full', 'log_loss')[0]:.4f} for reduced FININ. "
+        "This is a fairer probability comparison than assigning probability 1 to every day."
+    )
     report_lines.append(finding)
     report_lines.extend([
         "",
@@ -188,7 +201,8 @@ table{{width:100%;border-collapse:collapse;font-size:.95rem}}th,td{{padding:11px
 {chart_svg(runs,'balanced_accuracy','Balanced accuracy')}
 <h3>Exact held-out metrics</h3><div class="scroll"><table><thead><tr><th>Method</th><th>Accuracy ↑</th><th>Balanced accuracy ↑</th><th>Log loss ↓</th></tr></thead><tbody>{''.join(metric_rows)}</tbody></table></div>
 <div class="callout"><strong>Result to say aloud:</strong> The full model predicted up on {min(predicted_up_counts)}–{max(predicted_up_counts)} of {test_size} test dates across its three seeds. Only {observed_up} dates actually rose. Balanced accuracy near 50% means this run gives no convincing evidence that headline attention improved direction predictions. This is a useful measured outcome of the prototype.</div>
-<p class="muted">Balanced accuracy averages success on up and down days. Log loss also assesses the probability estimates. ± is variation across training seeds, not uncertainty across future years.</p></section>
+<p class="muted">Balanced accuracy averages success on up and down days. Log loss also assesses the probability estimates. ± is variation across training seeds, not uncertainty across future years.</p>
+<p><strong>Probability reference added during the audit:</strong> A constant probability fitted only on training labels ({prior:.4f}) has test log loss {prior_metrics['log_loss']:.4f}, compared with {summary(runs, 'full', 'log_loss')[0]:.4f} for reduced FININ. This is a fairer probability comparison than the always-up probability of 1.</p></section>
 <section><h2>4 · A few saved predictions</h2><p>The selected full-model run below had the lowest validation loss among its three seeds. These are its first six test predictions; the complete CSV is saved beside this report.</p>
 <div class="scroll"><table><thead><tr><th>Forecast</th><th>Answer date</th><th>Probability up</th><th>Predicted</th><th>Observed</th></tr></thead><tbody>{''.join(prediction_rows)}</tbody></table></div>
 <p class="muted">Predictions over 50% are labeled up. Attention weights can be inspected in the saved run, but they do not prove that a headline caused a market move.</p></section>
